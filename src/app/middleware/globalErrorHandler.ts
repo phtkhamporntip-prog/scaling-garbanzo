@@ -14,9 +14,11 @@ const GlobalErrorHandler: ErrorRequestHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  config.env === "development"
-    ? console.log(`🐱‍🏍 globalErrorHandler ~~`, { error })
-    : console.log(`🐱‍🏍 globalErrorHandler ~~`, error);
+  const safeErrorLog =
+    error instanceof Error
+      ? `${error.name}: ${error.message}`
+      : JSON.stringify(error);
+  console.log(`🐱‍🏍 globalErrorHandler ~~`, safeErrorLog);
 
   let statusCode = 500;
   let message = "Something went wrong !";

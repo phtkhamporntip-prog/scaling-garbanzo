@@ -1,8 +1,10 @@
 import { Server } from "http";
 import app from "./app";
-import config from "./config";
+import config, { validateEnvConfig } from "./config";
 
 export async function main() {
+  validateEnvConfig();
+
   const server: Server = app.listen(config.port, () => {
     console.log(`Scaling Garbanzo server running on port ${config.port}`);
   });

@@ -18,8 +18,13 @@ const AuthPermission =
   (...requiredRoles: string[]) =>
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      //get authorization token
-      const token = req.headers.authorization;
+      const authorizationHeader = req.headers.authorization;
+      const bearerToken = authorizationHeader?.startsWith("Bearer ")
+        ? authorizationHeader.split(" ")[1]
+        : authorizationHeader;
+      const cookieToken = req.cookies?.[config.cookie.access_token_name];
+      const token = bearerToken || cookieToken;
+
       if (!token) {
         throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized");
       }

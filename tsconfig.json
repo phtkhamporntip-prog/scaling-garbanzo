@@ -4,7 +4,7 @@
     "target": "ES6",
     /* Modules */
     "module": "commonjs",
-    "rootDir": "./src",
+    "rootDir": ".",
     "outDir": "./dist",
     "esModuleInterop": true,
     "sourceMap": true,

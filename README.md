@@ -38,6 +38,20 @@ Copy `.env.example` to `.env` and fill in your values:
 cp .env.example .env
 ```
 
+Or use automated setup helpers:
+
+```bash
+npm run setup:init-env
+npm run setup:generate-secrets
+npm run setup:check-env
+```
+
+Run full setup (env check + prisma push + build + auth tests):
+
+```bash
+npm run setup:all
+```
+
 ### Generate Prisma Client
 
 ```bash
@@ -50,6 +64,9 @@ npx prisma generate
 npm run start-dev
 ```
 
+If required environment variables are missing, the server now fails fast on startup
+with a clear list of missing or partially configured values.
+
 ### Build
 
 ```bash
@@ -61,6 +78,8 @@ npm run build
 ```bash
 npm start
 ```
+
+The production start command serves the compiled entrypoint from `dist/src/index.js`.
 
 ## MongoDB Atlas Setup
 
@@ -92,12 +111,14 @@ Follow these steps to create a MongoDB Atlas cluster and connect it to this proj
 1. On the **Database** overview page, click **"Connect"** on your cluster
 2. Select **"Drivers"**
 3. Copy the connection string — it will look like:
-   ```
+
+   ```text
    mongodb+srv://<db_username>:<db_password>@<cluster-name>.mongodb.net/<database-name>?retryWrites=true&w=majority&appName=<AppName>
    ```
+
 4. Replace `<db_username>` and `<db_password>` with your database user's credentials, and `<database-name>` with your database name (e.g. `scaling-garbanzo`):
 
-   ```
+   ```text
    mongodb+srv://myuser:mypassword@cluster0.abcde.mongodb.net/scaling-garbanzo?retryWrites=true&w=majority&appName=scaling-garbanzo
    ```
 
@@ -108,7 +129,7 @@ Follow these steps to create a MongoDB Atlas cluster and connect it to this proj
 In the [Vercel Dashboard](https://vercel.com/dashboard), navigate to your project → **Settings** → **Environment Variables** and add the following (at minimum for the **Production** environment, and optionally **Preview** for preview deployments):
 
 | Variable | Example Value | Description |
-|---|---|---|
+| --- | --- | --- |
 | `DATABASE_URL` | `mongodb+srv://user:pass@cluster.mongodb.net/scaling-garbanzo?retryWrites=true&w=majority` | MongoDB Atlas connection string |
 | `NODE_ENV` | `production` | Node environment |
 | `PORT` | `5000` | Server port |
@@ -116,6 +137,10 @@ In the [Vercel Dashboard](https://vercel.com/dashboard), navigate to your projec
 | `APP_NAME` | `scaling-garbanzo` | Application name |
 | `JWT_SECRET` | `<random-secret>` | Secret key for JWT signing |
 | `JWT_EXPIRES_IN` | `7d` | JWT token expiry duration |
+| `JWT_REFRESH_SECRET` | `<random-refresh-secret>` | Secret key for refresh JWT signing |
+| `JWT_REFRESH_EXPIRES_IN` | `30d` | Refresh token expiry duration |
+| `JWT_STATE_SECRET` | `<random-state-secret>` | OAuth state signature secret |
+| `ADMIN_BOOTSTRAP_SECRET` | `<random-admin-bootstrap-secret>` | Secret required to create admin users via API |
 
 > **Tip:** Generate a strong `JWT_SECRET` with: `openssl rand -base64 32`
 
@@ -134,7 +159,28 @@ Alternatively, push a new commit to trigger an automatic redeployment.
 ### Auth
 
 - Register `POST /api/v1/auth/register`
+- Bootstrap admin `POST /api/v1/auth/bootstrap-admin` [requires `ADMIN_BOOTSTRAP_SECRET`]
 - Login `POST /api/v1/auth/login`
+- Current user `GET /api/v1/auth/me`
+- Refresh token `POST /api/v1/auth/refresh-token`
+- Logout `POST /api/v1/auth/logout`
+- OAuth provider status `GET /api/v1/auth/oauth/providers`
+- OAuth start `GET /api/v1/auth/oauth/:provider/start`
+- OAuth callback `GET /api/v1/auth/oauth/:provider/callback`
+
+### Auth Smoke Test
+
+Run authentication smoke tests:
+
+```bash
+npm run test:auth
+```
+
+Run the database-backed auth lifecycle test:
+
+```bash
+npm run test:auth:db
+```
 
 ### User
 

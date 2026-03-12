@@ -1,14 +1,22 @@
 import express, { Application, Request, Response } from "express";
 import cors from "cors"
+import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import router from "./app/routes";
 import httpStatus from "http-status";
 import GlobalErrorHandler from "./app/middleware/globalErrorHandler";
+import config from "./config";
 
 const app:Application = express();
 app.use(express.json());
-app.use(cors({ origin: "*" }));
+app.use(
+  cors({
+    origin: config.client_url || true,
+    credentials: true,
+  })
+);
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Global rate limiter: max 100 requests per 15 minutes per IP
 const globalLimiter = rateLimit({
