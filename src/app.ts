@@ -1,5 +1,6 @@
 import express, { Application, Request, Response } from "express";
 import cors from "cors"
+import rateLimit from "express-rate-limit";
 import router from "./app/routes";
 import httpStatus from "http-status";
 import GlobalErrorHandler from "./app/middleware/globalErrorHandler";
@@ -8,6 +9,17 @@ const app:Application = express();
 app.use(express.json());
 app.use(cors({ origin: "*" }));
 app.use(express.urlencoded({ extended: true }));
+
+// Global rate limiter: max 100 requests per 15 minutes per IP
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many requests, please try again later." },
+});
+
+app.use(globalLimiter);
 
 app.use("/api/v1", router);
 app.use(GlobalErrorHandler);
