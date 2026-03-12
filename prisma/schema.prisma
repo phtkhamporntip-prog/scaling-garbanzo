@@ -1,0 +1,174 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  user
+  admin
+  investor
+  staker
+}
+
+enum InvestmentSchemeName {
+  Basic
+  Standard
+  Premium
+}
+
+model User {
+  id              String           @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  email           String           @unique
+  password        String
+  img             String?          @default("https://img.freepik.com/premium-photo/business-man_980716-2231.jpg")
+  role            Role             @default(user)
+  contactNo       String
+  address         String?
+  wallet          Int              @default(0)
+  deposit         Int              @default(0)
+  withdraw        Int              @default(0)
+  stake           Int              @default(0)
+  stakeReward     Int              @default(0)
+  referralReward  Int              @default(0)
+  income          Int              @default(0)
+  incomes         Incomes[]
+  stakes          Stake[]
+  stakeRewards    StakeReward[]
+  deposits        Deposit[]
+  withdraws       Withdraw[]
+  wallets         Wallet[]
+  referredBy      Referral[]       @relation(name: "ReferredTo")
+  referredTo      Referral[]       @relation(name: "ReferredBy")
+  referralIncomes ReferralIncome[] @relation(name: "ReferredBy")
+  referralTo      ReferralIncome[] @relation(name: "ReferredTo")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@map("users")
+}
+
+model Wallet {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String         @db.ObjectId
+  balance         Int            @default(0)
+  deposit         Int            @default(0)
+  withdraw        Int            @default(0)
+  stake           Int            @default(0)
+  stakeReward     Int            @default(0)
+  referralReward  Int            @default(0)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  users           User           @relation(fields: [userId], references: [id])
+
+  @@map("wallets")
+}
+
+model Deposit {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  amount    Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User     @relation(fields: [userId], references: [id])
+
+  @@map("deposits")
+}
+
+model Withdraw {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  amount    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User     @relation(fields: [userId], references: [id])
+  @@map("withdraws")
+}
+
+model Stake {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  amount    Int      @default(0)
+  userId    String   @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  users     User     @relation(fields: [userId], references: [id])
+  investmentSchemes InvestmentScheme[]
+
+  @@map("stakes")
+}
+
+model StakeReward {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String    @db.ObjectId
+  amount    Int
+  status    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  users     User      @relation(fields: [userId], references: [id])
+  incomes   Incomes[]
+
+  @@map("stakeRewards")
+}
+
+model Referral {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String   @db.ObjectId
+  referredBy      String   @db.ObjectId
+  referralDeposit Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  users           User     @relation(name: "ReferredBy", fields: [userId], references: [id])
+  referredByUser  User     @relation(name: "ReferredTo", fields: [referredBy], references: [id])
+
+  @@map("referrals")
+}
+
+model ReferralIncome {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String    @db.ObjectId
+  amount     Int       @default(10)
+  referredTo String    @db.ObjectId
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  referredBy User      @relation(name: "ReferredBy", fields: [referredTo], references: [id])
+  user       User      @relation(name: "ReferredTo", fields: [userId], references: [id])
+  incomes    Incomes[]
+
+  @@map("referralIncomes")
+}
+
+model Incomes {
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String         @db.ObjectId
+  totalIncome      Int            @default(0)
+  stakeIncome      Int            @default(0)
+  referralIncome   Int            @default(0)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  stakeRewardsId   String         @db.ObjectId
+  referralIncomeId String         @db.ObjectId
+  users            User           @relation(fields: [userId], references: [id])
+  stakeRewards     StakeReward    @relation(fields: [stakeRewardsId], references: [id])
+  referralIncomes  ReferralIncome @relation(fields: [referralIncomeId], references: [id])
+
+  @@map("incomes")
+}
+
+model InvestmentScheme {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      InvestmentSchemeName @unique @default(Basic)
+  amount    Int       @default(50)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  stakeId   String   @db.ObjectId
+  stakes    Stake  @relation(fields: [stakeId], references: [id])
+
+  @@map("investmentSchemes")
+}
