@@ -25,6 +25,34 @@ const globalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: "Too many requests, please try again later." },
+  keyGenerator: (req: Request) => {
+    // Handle Forwarded header (standardized X-Forwarded-For) - proper RFC 7239 parsing
+    const forwarded = req.get("Forwarded");
+    if (forwarded) {
+      const match = forwarded.match(/for=([^;,\s]+)/);
+      if (match) {
+        // Safely handle IPv6 addresses in brackets
+        let ip = match[1].trim();
+        if (ip.startsWith("[") && ip.endsWith("]")) {
+          ip = ip.slice(1, -1);
+        }
+        return ip;
+      }
+    }
+    
+    // Fallback to X-Forwarded-For header (commonly set by proxies like Vercel)
+    const xForwardedFor = req.get("X-Forwarded-For");
+    if (xForwardedFor) {
+      return xForwardedFor.split(",")[0].trim();
+    }
+    
+    // Fallback to direct IP, handling IPv6 properly
+    let ip = req.ip;
+    if (ip && ip.startsWith("[") && ip.endsWith("]")) {
+      ip = ip.slice(1, -1);
+    }
+    return ip || "127.0.0.1";
+  },
 });
 
 app.use(globalLimiter);
